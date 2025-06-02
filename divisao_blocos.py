@@ -9,6 +9,9 @@ import os
 import json
 import base64
 
+# Caminho para o diretório que possui os arquivos para teste
+CAMINHO_ARQUIVO = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "arquivos"))
+
 # funcao para dividir o arquivo em blocos e criação de hash para os respectivos blocos:
 # o hash serve para validação, verificar se o arquivo a ser criado é "igual" ao original
 # recebe como parâmetro o nome do arquivo e tamanho em bytes dos blocos
@@ -41,9 +44,9 @@ def divide_arquivo_gera_hash(arquivo, bloco_tamanho_bytes):
 
 
 if __name__ == "__main__":
-    arquivo = input("Digite o nome do arquivo a ser dividido, incluindo a extensão: ")
+    arquivo = os.path.abspath(os.path.join(CAMINHO_ARQUIVO, input("Digite o nome do arquivo a ser dividido, incluindo a extensão: ")))
     # Tamanho em bytes
-    tamanho_bloco = 32 * 1024 # 32 KB
+    tamanho_bloco = 4 * 1024 # 4 KB
 
     blocos, hashes = divide_arquivo_gera_hash(arquivo, tamanho_bloco)
     if blocos and hashes:
