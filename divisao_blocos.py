@@ -9,9 +9,6 @@ import os
 import json
 import base64
 
-# Caminho para o diretório que possui os arquivos para teste
-CAMINHO_ARQUIVO = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "arquivos"))
-
 # funcao para dividir o arquivo em blocos e criação de hash para os respectivos blocos:
 # o hash serve para validação, verificar se o arquivo a ser criado é "igual" ao original
 # recebe como parâmetro o nome do arquivo e tamanho em bytes dos blocos
@@ -20,51 +17,59 @@ CAMINHO_ARQUIVO = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", 
 # e também retorna o hash vinculado ao bloco
 # digamos que temos um arquivo de 22 blocos, então data_blocos[0] guardará, em bytes, o primeiro bloco, e 
 # hash_blocos[0] guardará o código hash vinculado a este bloco.
-def divide_arquivo_gera_hash(arquivo, bloco_tamanho_bytes):
-    data_blocos = []
-    hash_blocos = []
-    algoritmo_hash = 'sha256'
+class DivisaoBlocos:
+    def __init__(self, arquivo):
+        self.arquivo = arquivo
+        self.tamanho_bloco = 32 * 1024 # Tamanho em bytes, 32 KB
+        self.algoritmo_hash = 'sha256'
+        self.data_blocos = []
+        self.hash_blocos = []
+        self.metadata = {}
 
-    f = open(arquivo, 'rb')
-    try:
-        while (True):
-            # aqui ele vai ler o arquivo até chegar no tamanho dado, e então processar. Vai loopar até ler todo o arquivo
-            bloco = f.read(bloco_tamanho_bytes)
-            if not bloco:
-                break
-            data_blocos.append(base64.b64encode(bloco).decode('utf-8'))
-            hasher = hashlib.new(algoritmo_hash)
-            # esse update é para atualizar o hash com a string recebida
-            hasher.update(bloco)
-            hash_blocos.append(hasher.hexdigest())
-    finally:
-        f.close()
+    def divide_e_hash(self):
+        self.data_blocos = []
+        self.hash_blocos = []
         
-    return data_blocos, hash_blocos
+        f = open(arquivo, 'rb')
+        try:
+            while(True):
+                # aqui ele vai ler o arquivo até chegar no tamanho dado, e então processar. Vai loopar até ler todo o arquivo
+                bloco = f.read(self.tamanho_bloco)
+                if not bloco:
+                    break
+                self.data_blocos.append(base64.b64encode(bloco).decode('utf-8'))
+                hasher = hashlib.new(self.algoritmo_hash)
+                # esse update é para atualizar o hash com a string recebida
+                hasher.update(bloco)
+                self.hash_blocos.append(hasher.hexdigest())
+        finally:
+            f.close()
+        self.metadata = {
+            "nome_arquivo": os.path.basename(self.arquivo),
+            "bloco_tamanho_bytes": self.tamanho_bloco,
+            "hash_blocos": self.hash_blocos,
+            "numero_blocos": len(self.hash_blocos),
+            "extensao": os.path.splitext(self.arquivo)[1]
+        }
 
+    def gravar_dados(self):
+        # criação de metadata json e blocos json
+        blocos_arquivo = "blocos.json"
+        metadata_arquivo = "metadata.json"
+        f = open(blocos_arquivo, 'w')
+        json.dump(self.data_blocos, f)
+        f.close()
+        f = open(metadata_arquivo, 'w')
+        json.dump(self.metadata, f)
+        f.close()
+
+    def rodar(self):
+        self.divide_e_hash()
+        self.gravar_dados()
+        print("Arquivo", self.arquivo, "dividido em", len(self.data_blocos), "blocos, bytes dos blocos em 'blocos.json' e metadata em 'metadata.json'.")
 
 if __name__ == "__main__":
-    arquivo = os.path.abspath(os.path.join(CAMINHO_ARQUIVO, input("Digite o nome do arquivo a ser dividido, incluindo a extensão: ")))
-    # Tamanho em bytes
-    tamanho_bloco = 4 * 1024 # 4 KB
+    arquivo = input("Digite o nome do arquivo a ser dividido, incluindo a extensão: ")
 
-    blocos, hashes = divide_arquivo_gera_hash(arquivo, tamanho_bloco)
-    if blocos and hashes:
-        print("Tamanho do arquivo original em bytes:", os.path.getsize(arquivo))
-
-        # criação de metadata json e blocos json
-        metadata = {
-            "nome_arquivo": os.path.basename(arquivo),
-            "bloco_tamanho_bytes": tamanho_bloco,
-            "hash_blocos": hashes,
-            "numero_blocos": len(hashes),
-            "extensao": os.path.splitext(arquivo)[1]
-        }
-        f = open("blocos.json", 'w')
-        json.dump(blocos, f)
-        f.close()
-        f = open("metadata.json", 'w')
-        json.dump(metadata, f)
-        f.close()
-
-        print("Arquivo dividido em", len(blocos), "blocos, bytes dos blocos em 'blocos.json' e metadata em 'metadata.json'.")
+    dividir = DivisaoBlocos(arquivo)
+    dividir.rodar()
