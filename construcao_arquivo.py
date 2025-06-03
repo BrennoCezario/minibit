@@ -1,56 +1,75 @@
-# Construção do arquivo - Trabalho 2 Sistemas Distribuidos
+# Divisão do arquivo em blocos - Trabalho 2 Sistemas Distribuidos
 
-import json
-import os
+# No torrent original, temos a divisão de pedaços e estes pedaços são divididos em blocos, que são ainda menores.
+# são os blocos que vão ter os dados do arquivo propriamente dito, os pedaços são usados para validação e outras coisas
+# como é um trabalho mais simples, juntei os pedaços e blocos em um só, que são chamados de blocos.
+
 import hashlib
+import os
+import json
 import base64
 
-# funcao para reconstruir os arquivos, recebe como parametro os dados dos blocos em base64 e o nome do arquivo de saída
-def construir_arquivo(data_blocos, output):
-    # abre o arquivo de saída recém criado como wb (write binary), decodifica base64 em bytes e escreve os bytes, montando o arquivo
-    f = open(output, 'wb')
-    try:
-        for bloco_b64 in data_blocos:
-            bloco = base64.b64decode(bloco_b64)
-            # bloco sao os blocos reconstruidos
-            f.write(bloco)
-    finally:
+# funcao para dividir o arquivo em blocos e criação de hash para os respectivos blocos:
+# o hash serve para validação, verificar se o arquivo a ser criado é "igual" ao original
+# recebe como parâmetro o nome do arquivo e tamanho em bytes dos blocos
+# base64.b64encode está codificando os bytes em base64, para poder colocar no json, e decode('utf-8') converte o base64 em string normal
+# retorna data_blocos que contêm base64 em string do json, isto vem da codificação dos bytes dos blocos;
+# e também retorna o hash vinculado ao bloco
+# digamos que temos um arquivo de 22 blocos, então data_blocos[0] guardará, em bytes, o primeiro bloco, e 
+# hash_blocos[0] guardará o código hash vinculado a este bloco.
+class DivisaoBlocos:
+    def __init__(self, arquivo):
+        self.arquivo = arquivo
+        self.tamanho_bloco = 32 * 1024 # Tamanho em bytes, 32 KB
+        self.algoritmo_hash = 'sha256'
+        self.data_blocos = []
+        self.hash_blocos = []
+        self.metadata = {}
+
+    def divide_e_hash(self):
+        self.data_blocos = []
+        self.hash_blocos = []
+        
+        f = open(arquivo, 'rb')
+        try:
+            while(True):
+                # aqui ele vai ler o arquivo até chegar no tamanho dado, e então processar. Vai loopar até ler todo o arquivo
+                bloco = f.read(self.tamanho_bloco)
+                if not bloco:
+                    break
+                self.data_blocos.append(base64.b64encode(bloco).decode('utf-8'))
+                hasher = hashlib.new(self.algoritmo_hash)
+                # esse update é para atualizar o hash com a string recebida
+                hasher.update(bloco)
+                self.hash_blocos.append(hasher.hexdigest())
+        finally:
+            f.close()
+        self.metadata = {
+            "nome_arquivo": os.path.basename(self.arquivo),
+            "bloco_tamanho_bytes": self.tamanho_bloco,
+            "hash_blocos": self.hash_blocos,
+            "numero_blocos": len(self.hash_blocos),
+            "extensao": os.path.splitext(self.arquivo)[1]
+        }
+
+    def gravar_dados(self):
+        # criação de metadata json e blocos json
+        blocos_arquivo = "blocos.json"
+        metadata_arquivo = "metadata.json"
+        f = open(blocos_arquivo, 'w')
+        json.dump(self.data_blocos, f)
+        f.close()
+        f = open(metadata_arquivo, 'w')
+        json.dump(self.metadata, f)
         f.close()
 
-    print("Arquivo reconstruido como:", output)
-
-# com verifica_construcao, verificamos o hash de cada bloco reconstruido com o hash que criamos quando estávamos dividindo o arquivo original em blocos
-def verifica_construcao(hashes_originais, data_blocos):
-    algoritmo_hash = 'sha256'
-    # zip emparelha cada bloco reconstruido com o hash original, para assim podermos comparar.
-    for idx, (bloco_b64, original_hash) in enumerate(zip(data_blocos, hashes_originais)):
-        bloco = base64.b64decode(bloco_b64)
-        hasher = hashlib.new(algoritmo_hash)
-        # hasher é atualizado com o hash do bloco reconstruido, para assim comparar com o hash original.
-        hasher.update(bloco)
-        # aqui fazemos uma validação, comparando o hash do bloco reconstruido com o hash original para aquele bloco. Se não bater, retorna false
-        # Estando tudo certo, retorna true e temos certeza que o arquivo reconstruído é idêntico ao original
-        if hasher.hexdigest() != original_hash:
-            print("Bloco de índice:",idx,"não bateu com o original.")
-            return False
-    return True
+    def rodar(self):
+        self.divide_e_hash()
+        self.gravar_dados()
+        print("Arquivo", self.arquivo, "dividido em", len(self.data_blocos), "blocos, bytes dos blocos em 'blocos.json' e metadata em 'metadata.json'.")
 
 if __name__ == "__main__":
-    # Carrega a informação em byte dos blocos e o seu metadata
-    f = open("blocos.json", 'r')
-    blocos = json.load(f)
-    f.close()
+    arquivo = input("Digite o nome do arquivo a ser dividido, incluindo a extensão: ")
 
-    f = open("metadata.json", 'r')
-    metadata = json.load(f)
-    f.close()
-
-    # nome do arquivo a ser construido
-    output = f"arquivo_reconstruido{metadata['extensao']}"
-    construir_arquivo(blocos, output)
-
-    # validação dos blocos, hash_blocos são os hashes originais, e 'blocos' contem os hashes dos 
-    if verifica_construcao(metadata["hash_blocos"], blocos):
-        print("Sucesso, verificação hash bem sucedida.")
-    else:
-        print("Falha, alguns blocos falharam a verificação hash.")
+    dividir = DivisaoBlocos(arquivo)
+    dividir.rodar()
