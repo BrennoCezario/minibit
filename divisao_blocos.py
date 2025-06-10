@@ -9,6 +9,8 @@ import os
 import json
 import base64
 
+CAMINHO_ARQUIVO = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "arquivos"))
+
 # funcao para dividir o arquivo em blocos e criação de hash para os respectivos blocos:
 # o hash serve para validação, verificar se o arquivo a ser criado é "igual" ao original
 # recebe como parâmetro o nome do arquivo e tamanho em bytes dos blocos
@@ -19,7 +21,7 @@ import base64
 # hash_blocos[0] guardará o código hash vinculado a este bloco.
 class DivisaoBlocos:
     def __init__(self, arquivo):
-        self.arquivo = arquivo
+        self.arquivo = os.path.abspath(os.path.join(CAMINHO_ARQUIVO, arquivo))
         self.tamanho_bloco = 32 * 1024 # Tamanho em bytes, 32 KB
         self.algoritmo_hash = 'sha256'
         self.data_blocos = []
@@ -30,7 +32,7 @@ class DivisaoBlocos:
         self.data_blocos = []
         self.hash_blocos = []
         
-        f = open(arquivo, 'rb')
+        f = open(self.arquivo, 'rb')
         try:
             while(True):
                 # aqui ele vai ler o arquivo até chegar no tamanho dado, e então processar. Vai loopar até ler todo o arquivo

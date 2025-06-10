@@ -2,7 +2,10 @@ import os
 import random
 import time
 import logging
+import json
 from peer import Peer
+from divisao_blocos import DivisaoBlocos
+from construcao_arquivo import ConstruirArquivo
 from threading import Thread
 
 NUMERO_DE_PEERS = 10 # Constante que define o número de peers na rede
@@ -161,11 +164,17 @@ def completar_arquivo(peer, arquivo, estoques, lista_peers):
     receptor_thread.join()
     return
 
-
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear") # Chamada de sistema para limpar o terminal para os 'prints'
 
-    arquivo =  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] # Simulação de um arquivo com 10 blocos
+    arquivo = "texto.txt"
+    
+    dividir_arquivo = DivisaoBlocos(arquivo)
+    dividir_arquivo.rodar()
+    
+    blocos_arquivo = []
+    with open("blocos.json", 'r', encoding='utf-8') as f:
+        blocos_arquivo = json.load(f)
 
     lista_peers = [] # Lista para inserir os objetos da classe peer
 
@@ -177,20 +186,20 @@ if __name__ == "__main__":
     '''' Cálculo que determina o número de blocos que cada peer iniciará. 
     A divisão do tamanho de arquivos pelo número de peers garante que todos os blocos serão distribuídos, 
     e somando +1, garantimos que teremos alguns blocos mais raros do que outros '''
-    blocos_por_peer = (len(arquivo) // len(lista_peers)) + 1
+    blocos_por_peer = (len(blocos_arquivo) // len(lista_peers)) + 1
     print("\nNúmero de blocos para cada peer: ", blocos_por_peer, "\n")
 
-    distribuir_blocos(arquivo, lista_peers, blocos_por_peer) # Chamada da função que distribui um subconjunto de blocos para cada peer
+    distribuir_blocos(blocos_arquivo, lista_peers, blocos_por_peer) # Chamada da função que distribui um subconjunto de blocos para cada peer
 
     matriz_conexoes = iniciar_conexoes(lista_peers) # Função que gera uma matriz de adjacência entre os peers para ilustrar e definir as conexões dos mesmos
     
     for peer in lista_peers:
-        print(f"\nBlocos do peer {peer.id}: {peer.blocos}")
+        # print(f"\nBlocos do peer {peer.id}: {peer.blocos}")
         print(f"Conexões do peer {peer.id}: {peer.conexoes}" if lista_peers.index(peer) < len(lista_peers)-1  else f"Conexões do peer {peer.id}: {peer.conexoes}\n")
 
     # Função que inicia as trocas entre os peers 
     print("\n--- INICIANDO TROCAS ---\n")
-    iniciar_trocas(lista_peers, arquivo)
+    iniciar_trocas(lista_peers, blocos_arquivo)
 
     novas_conexoes_thread = Thread(target=atualizar_conexoes, args=(lista_peers, matriz_conexoes), daemon=True) # Thread que atualiza as conexões entre peers a cada 10 segundos
     novas_conexoes_thread.start()
@@ -205,4 +214,6 @@ if __name__ == "__main__":
     # Resultado das trocas
     for peer in lista_peers:
         peer.blocos.sort()
-        print(f"\nArquivo do peer {peer.id}: {peer.blocos}")
+        construtor = ConstruirArquivo(peer.blocos)
+        construtor.rodar(peer.id)
+        print(f"\nArquivo do peer {peer.id}")

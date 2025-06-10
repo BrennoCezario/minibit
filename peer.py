@@ -69,14 +69,14 @@ class Peer:
     
     # Função que solicita um bloco específico que pertence a um peer específico
     def solicita_bloco(self, peer_alvo, bloco_solicitado):
-        self.log(f"Solicitando bloco '{bloco_solicitado}' ao peer {peer_alvo.id}")
+        self.log(f"Solicitando bloco ao peer {peer_alvo.id}")
         with self.lock:
             self.pedidos.append((peer_alvo.id, bloco_solicitado)) # Registra o bloco solicitado em pedidos
-        self.enviar_mensagem(peer_alvo, f"PEDIDO|{str(bloco_solicitado)}") # Chama a função que envia a mensagem do tipo 'PEDIDO'
+        self.enviar_mensagem(peer_alvo, f"PEDIDO|{bloco_solicitado}") # Chama a função que envia a mensagem do tipo 'PEDIDO'
     
     # Função que realiza o envio de uma mensagem de um peer para o outro
     def enviar_mensagem(self, receptor, mensagem):
-        self.log(f"Enviando '{mensagem}' para o peer {receptor.id}")
+        self.log(f"Enviando 'mensagem' para o peer {receptor.id}")
 
         with receptor.lock:
             receptor.correio.append((self, mensagem))
@@ -93,20 +93,20 @@ class Peer:
                     self.correio.clear()
 
             if mensagens_para_processar:
-                self.log(f"Verificando suas mensagens: {[mensagem[1] for mensagem in mensagens_para_processar]}")
+                self.log(f"Verificando suas mensagens: ")
                 
                 for peer, mensagem in mensagens_para_processar: # Realiza a leitura de todas as mensagens que estão no correio naquela ocasião
                     
                     if "PEDIDO" in mensagem: # Mensagens de pedido de bloco
                         pedido = mensagem.split("PEDIDO|")[1] # O bloco que foi solicitado
-                        if int(pedido) in self.blocos and peer.id in self.conexoes: # Verifica se possui o bloco e se faz parte das conexões
-                            self.log(f"Atendendo pedido do bloco {pedido} para o peer {peer.id}")
+                        if pedido in self.blocos and peer.id in self.conexoes: # Verifica se possui o bloco e se faz parte das conexões
+                            self.log(f"Atendendo pedido do bloco  para o peer {peer.id}")
                             self.enviar_mensagem(peer, f"ENVIO|{pedido}") # Envia o bloco
                     
                     elif "ENVIO" in mensagem: # Mensagens de envio de bloco
                         envio = mensagem.split("ENVIO|")[1] # O bloco que foi enviado
                         with self.lock:
-                            if int(envio) not in self.blocos:
-                                self.blocos.append(int(envio)) # Adquire o bloco
-                            self.pedidos = [p for p in self.pedidos if p[1] != int(envio)] # Remove o bloco da lista de pedidos
-                        self.log(f"Recebeu o bloco {envio} do peer {peer.id}. Blocos: {self.blocos}")
+                            if envio not in self.blocos:
+                                self.blocos.append(envio) # Adquire o bloco
+                            self.pedidos = [p for p in self.pedidos if p[1] != envio] # Remove o bloco da lista de pedidos
+                        self.log(f"Recebeu o bloco do peer {peer.id}.")
