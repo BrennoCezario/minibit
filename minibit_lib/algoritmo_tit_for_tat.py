@@ -3,9 +3,9 @@ import random
 import time
 import logging
 import json
-from peer import Peer
-from divisao_blocos import DivisaoBlocos
-from construcao_arquivo import ConstruirArquivo
+from .peer import Peer
+from .divisao_blocos import DivisaoBlocos
+from .construcao_arquivo import ConstruirArquivo
 from threading import Thread
 
 NUMERO_DE_PEERS = 10 # Constante que define o número de peers na rede
@@ -129,6 +129,7 @@ def iniciar_trocas(peers, arquivo):
         
 # Função que possui o objetivo de completar o arquivo de cada peer
 def completar_arquivo(peer, arquivo, estoques, lista_peers):
+    peer.receptor_ativo = True
     receptor_thread = Thread(target=peer.receber_mensagem) # Thread que cada peer inicia para ouvir novas mensagens enquanto realiza outras tarefas de envio
     receptor_thread.start()
     
@@ -151,13 +152,13 @@ def completar_arquivo(peer, arquivo, estoques, lista_peers):
                 peer.solicita_bloco(peers, bloco_desejado) # Solicita o bloco para o peer que o possui
                 break
 
-    peer.arquivo_incompleto = False # Mostra que completou o arquivo
+    peer.arquivo_completo = True # Mostra que completou o arquivo
     print(f"[Peer {peer.id}] Obteve todos os blocos")
     
     # Lógica para verificar se os outros peers já completaram seus arquivos
     arquivos_incompletos = len(lista_peers)
     while arquivos_incompletos > 0: # Enquanto houver peers com arquivo incompleto, a thread que recebe pedidos continuará ligada
-        if lista_peers[arquivos_incompletos-1].arquivo_incompleto == False:
+        if lista_peers[arquivos_incompletos-1].arquivo_completo == True:
             arquivos_incompletos-=1    
             
     peer.receptor_ativo = False # Desliga a thread receptora de mensagens
@@ -167,7 +168,7 @@ def completar_arquivo(peer, arquivo, estoques, lista_peers):
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear") # Chamada de sistema para limpar o terminal para os 'prints'
 
-    arquivo = "texto.txt"
+    arquivo = "trabalho_final.pdf"
     
     dividir_arquivo = DivisaoBlocos(arquivo)
     dividir_arquivo.rodar()

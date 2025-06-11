@@ -2,7 +2,11 @@ import random
 import time
 import os
 import logging
+import socket
 from threading import Lock
+
+TRACKER_HOST = 'localhost'
+TRACKER_PORT = 8000
 
 class Peer:
     def __init__(self, id):
@@ -11,8 +15,8 @@ class Peer:
         self.conexoes = [] # Lista que mostra as conexões atuais do peer
         self.pedidos = [] # Pedidos que foram solicitados, mas ainda não foram respondidos, para que não haja mais pedidos do mesmo bloco
         self.correio = [] # Correio de mensagens recebidas
-        self.arquivo_incompleto = True # Variável que diz se arquivo está ou não completo
-        self.receptor_ativo = True # Variável que diz se o receptor de mensagens continua ou não ativo
+        self.arquivo_completo = False # Variável que diz se arquivo está ou não completo
+        self.receptor_ativo = False # Variável que diz se o receptor de mensagens continua ou não ativo
         self.lock = Lock() # Lock para evitar acessos simultâneos em variáveis compartilhadas
         
         # Configurando Logger que irá gerar os logs
@@ -28,6 +32,9 @@ class Peer:
     # Função que gera os logs do peer      
     def log(self, mensagem):
         self.logger.info(mensagem)
+        
+    def servidor():
+        pass
     
     # Função que analisa a matriz de conexões e define quais são os outros peers que estão conectados com a instância atual
     def definir_conexoes(self, conexoes):
@@ -110,3 +117,4 @@ class Peer:
                                 self.blocos.append(envio) # Adquire o bloco
                             self.pedidos = [p for p in self.pedidos if p[1] != envio] # Remove o bloco da lista de pedidos
                         self.log(f"Recebeu o bloco do peer {peer.id}.")
+                        
