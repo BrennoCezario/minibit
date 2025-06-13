@@ -4,8 +4,8 @@ import time
 import logging
 import json
 from .peer import Peer
-from .divisao_blocos import DivisaoBlocos
-from .construcao_arquivo import ConstruirArquivo
+from src.divisao_blocos import DivisaoBlocos
+from src.construcao_arquivo import ConstruirArquivo
 from threading import Thread
 
 NUMERO_DE_PEERS = 10 # Constante que define o número de peers na rede

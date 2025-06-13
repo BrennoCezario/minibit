@@ -68,4 +68,4 @@ class DivisaoBlocos:
     def rodar(self):
         self.divide_e_hash()
         self.gravar_dados()
-        print("Arquivo", self.arquivo, "dividido em", len(self.data_blocos), "blocos, bytes dos blocos em 'blocos.json' e metadata em 'metadata.json'.")
+        print("Arquivo", os.path.basename(self.arquivo), "dividido em", len(self.data_blocos), "blocos, bytes dos blocos em 'blocos.json' e metadata em 'metadata.json'.")
