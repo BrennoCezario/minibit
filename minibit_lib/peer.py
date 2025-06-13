@@ -4,6 +4,7 @@ import os
 import logging
 import socket
 from threading import Lock
+from collections import Counter # Usado para contar ocorrencias de forma mais simples
 
 TRACKER_HOST = 'localhost'
 TRACKER_PORT = 8000
@@ -64,6 +65,31 @@ class Peer:
 
         if blocos_faltando:
             return random.choice(blocos_faltando) # Retorna um bloco aleatório que está faltando para completar o arquivo
+        return None
+
+    # Função baseada na função RECEBE_ESTOQUES mas aqui ela retorna o bloco mais raro
+    def recebe_estoques_mais_raro(self, estoques):
+        blocos_faltando = []  # Lista que guarda os blocos que restam para completar o arquivo
+
+        with self.lock:
+            blocos_pendentes = [p[1] for p in self.pedidos]
+            for peer_id, blocos in list(estoques.items()):
+                if peer_id != self.id and int(peer_id) in self.conexoes:
+                    for bloco in blocos:
+                        if bloco not in self.blocos and bloco not in blocos_pendentes:  # Verifica se já possui o bloco ou se já solicitou o bloco
+                            blocos_faltando.append((peer_id, bloco))
+
+        # Logica rarest first
+        frequencia = Counter(bloco for _, bloco in blocos_faltando) # Conta as ocorrencias de cada bloco
+
+        bloco_mais_raro = min(frequencia, key=frequencia.get) # Encontra o primeiro bloco com menor frequencia, pode dar empate com outros
+
+        if blocos_faltando:
+
+            for bloco_faltante in blocos_faltando:
+                if bloco_faltante[1] == bloco_mais_raro:
+                    return bloco_faltante  # Retorna o bloco mais raro dentre os blocos do estoque e que está faltando para completar o arquivo
+
         return None
     
     # Verifica se os pedidos estão expirados, caso uma conexão tenha sido desfeita
