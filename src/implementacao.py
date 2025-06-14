@@ -20,7 +20,7 @@ def obter_blocos_iniciais(peer, tracker):
 
     blocos_totais = len(blocos)
     
-    peer.blocos = random.sample(blocos, (len(blocos) // 4) + 1)
+    peer.blocos = random.sample(blocos, (len(blocos) // 3) + 1)
     peer.indices = [indice for indice, _ in peer.blocos] # os indices do peer sao somente os indices dos blocos que possui
     
     print(f"\n{len(peer.blocos)} Blocos: {[bloco[1][:5] + '...' for bloco in peer.blocos]}\n")

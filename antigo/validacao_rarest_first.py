@@ -33,6 +33,6 @@ if __name__ == "__main__":
     'peer2': [2, 3, 5],
     'peer4': [3, 4, 5, 6],
     'peer5': [2, 6],
-},[2, 3])
+    },[2, 3])
 
     print(Rarest_First_1.retorna_pedaco_raro())

@@ -5,6 +5,7 @@ import logging
 import os
 import json
 import random
+from collections import Counter
 
 IP = '127.0.0.1'
 
@@ -255,19 +256,41 @@ class Peer:
             
     def receber_estoques(self):
         blocos_faltando = [] # Lista que guarda os blocos que restam para completar o arquivo
-
+        bloco_peers = {}
         with self.lock:
             blocos_pendentes = [p[1] for p in self.pedidos]
             for peer_id, blocos in self.estoques:
                 if  peer_id in self.peers:
                     for bloco in blocos:
                         if bloco not in self.indices and bloco not in blocos_pendentes: # Verifica se já possui o bloco ou se já solicitou o bloco
-                            blocos_faltando.append((peer_id, bloco))
+                            blocos_faltando.append((bloco))
+                            if bloco not in bloco_peers:
+                                bloco_peers[bloco] = []
+                            bloco_peers[bloco].append(peer_id)
 
-        if blocos_faltando:
-            return random.choice(blocos_faltando) # Retorna um bloco aleatório que está faltando para completar o arquivo
-        self.arquivo_completo = True
-        return None
+        # if blocos_faltando:
+        #     return random.choice(blocos_faltando) # Retorna um bloco aleatório que está faltando para completar o arquivo
+        if not blocos_faltando:
+            self.arquivo_completo = True
+            return None
+        frequencia = Counter(blocos_faltando)
+        minima_frequencia = min(frequencia.values())
+        # aqui criamos uma lista com os blocos com a menor frequencia, os mais raros
+        raros_blocos = []
+        # frequencia.items() retorna pares chave e valor, em que a chave é o indice do bloco (bloco) e o valor é o count, sendo este count contando quantos peers tem aquele bloco
+        for bloco, count in frequencia.items():
+            if count == minima_frequencia:
+                raros_blocos.append(bloco)
+
+        r_bloco_escolhido = random.choice(raros_blocos)
+
+        r_peer_id = bloco_peers[r_bloco_escolhido]
+        r_peer_id_escolhido = random.choice(r_peer_id)
+        
+        self.log(f"Frequencia blocos raros: {frequencia}, blocos de menor frequencia: {raros_blocos}")
+
+        return (r_peer_id_escolhido, r_bloco_escolhido)
+        
     
     
     def solicitar_bloco(self, peer_alvo, bloco):
