@@ -39,9 +39,31 @@ class Peer:
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
     
-    # Função que gera os logs do peer      
+    def short(self, value, length=8):
+        """
+        funcao para encurtar o log dos blocos, já que ao printar os bytes dos blocos, eles sao GIGANTES
+        """
+        if isinstance(value, str) and len(value) > length:
+            return value[:length] + "..."
+        return value
+   
     def log(self, mensagem):
-        self.logger.info(mensagem)
+        """
+        Função que gera os logs do peer   
+        """        
+        if isinstance(mensagem, dict):
+            msg = {}
+            for k, v in mensagem.items():
+                if k in ("bloco", "blocos", "estoque"):
+                    if isinstance(v, list):
+                        msg[k] = [self.short(b) for b in v]
+                    else:
+                        msg[k] = self.short(v)
+                else:
+                    msg[k] = v
+            self.logger.info(json.dumps(msg, ensure_ascii=False))
+        else:
+            self.logger.info(mensagem)
     
     def iniciar_servidor(self, porta):
         servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -61,11 +83,19 @@ class Peer:
             threading.Thread(target=self.tratar_peer, args=(conexao,)).start()
             
     def tratar_peer(self, conexao):
+        buffer = ""
         while True:
             time.sleep(0.2)
             mensagem = conexao.recv(4096)
-            if mensagem:
-                self.correio.append((conexao, mensagem.decode()))
+            if not mensagem:
+                print("not mensagem teste tratar peer")
+                break
+            buffer += mensagem.decode()
+            # print("conteudo buffer:", buffer)
+            while '\n' in buffer:
+                mensagem, buffer = buffer.split('\n', 1)
+                if mensagem.strip():
+                    self.correio.append((conexao, mensagem))
                 
     def conectar_servidor(self, porta):
         servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -78,7 +108,7 @@ class Peer:
             "id": self.id
         }
     
-        servidor.send(json.dumps(mensagem_inicial).encode())
+        servidor.send((json.dumps(mensagem_inicial) + "\n").encode())
         
         threading.Thread(target=self.tratar_peer, args=(servidor,)).start()
         
@@ -97,6 +127,8 @@ class Peer:
             if mensagens_para_processar:
                 self.log(f"Verificando suas mensagens: {[str(mensagem) + '...' for conn, mensagem in mensagens_para_processar]}")
                 
+                curtas_msgs = []
+
                 for conexao, mensagem in mensagens_para_processar:
                     try:
                         mensagem = json.loads(mensagem)
@@ -119,9 +151,25 @@ class Peer:
                                 
                                 print(f"Peer {peer_id} registrado! Endereço: {peer_ip}:{peer_porta}")
                                 
+                                if self.id == 0:
+                                    for pid, info in self.peers.items():
+                                        if pid != peer_id:
+                                            try:
+                                                info["conexao"].send(
+                                                    (json.dumps({"tipo": "NOVO_PEER", "peer": {
+                                                        "id": peer_id, "ip": peer_ip, "porta": peer_porta
+                                                    }}) + "\n").encode()
+                                                )
+                                            except:
+                                                print("Erro ao notificar peer", pid)
+                                    lista_peers = [
+                                        {"id": pid, "ip": info["endereco"][0], "porta": info["endereco"][1]}
+                                        for pid, info in self.peers.items() if pid != peer_id
+                                    ]
+                                    conexao.send((json.dumps({"tipo": "LISTA_PEERS", "peers": lista_peers}) + '\n').encode())
                                 # self.fornecer_blocos(conexao, peer_id) if self.id == 0 else None
                                 
-                                self.conectar_servidor(peer_porta) if peer_porta not in self.conectados else None
+                                # self.conectar_servidor(peer_porta) if peer_porta not in self.conectados else None
                                 
                             case "ESTOQUE":
                                 peer_id = mensagem.get("id")
@@ -148,14 +196,38 @@ class Peer:
                                         if indice == bloco_solicitado:
                                             self.enviar_bloco(peer_id, indice, bloco)
                                     
+                            case "NOVO_PEER":
+                                peer = mensagem.get("peer")
+                                pid = peer["id"]
+                                porta = peer["porta"]
+                                if pid != self.id and pid not in self.peers:
+                                    try:
+                                        self.conectar_servidor(porta)
+                                    except:
+                                        print("Erro ao tentar se conectar com peer", pid)
+                                
+                            case "LISTA_PEERS":
+                                for peer in mensagem.get("peers", []):
+                                    pid = peer["id"]
+                                    ip = peer["ip"]
+                                    porta = peer["porta"]
+                                    if pid != self.id and pid not in self.peers:
+                                        try:
+                                            self.conectar_servidor(porta)
+                                        except:
+                                            print("Erro ao tentar se conectar com peer", pid)
+
                             case "BLOCO":
                                 peer_id = mensagem.get("id")
                                 indice_bloco = mensagem.get("indice")
                                 bloco_recebido = mensagem.get("bloco")
                                 
-                                self.log(f"Bloco {indice_bloco} recebido do peer {peer_id}")
-                                self.blocos.append((indice_bloco, bloco_recebido))
-                                self.indices.append(indice_bloco)
+                                self.log(f"Bloco {indice_bloco} recebido do peer {peer_id} ({self.short(bloco_recebido)})")
+                                if indice_bloco not in self.indices:
+                                    self.blocos.append((indice_bloco, bloco_recebido))
+                                    self.indices.append(indice_bloco)
+                                with self.lock:
+                                    self.pedidos = [p for p in self.pedidos if p[1] != indice_bloco]
                                                               
                             case "ATUALIZAR":
                                 return
@@ -167,13 +239,18 @@ class Peer:
         while True:
             time.sleep(3)
             for peer_id, dados in self.peers.items():
+                if peer_id == 0: # id = 0 é o tracker, então pulamos
+                    continue
                 conexao = dados["conexao"]
                 mensagem = {
                     "tipo": "ESTOQUE",
                     "id": self.id,
                     "estoque": self.indices
                 }
-                conexao.send(json.dumps(mensagem).encode())
+                try:
+                    conexao.send((json.dumps(mensagem) + '\n').encode())
+                except:
+                    print("Erro ao tentar enviar estoque para o peer", peer_id)
             
     def receber_estoques(self):
         blocos_faltando = [] # Lista que guarda os blocos que restam para completar o arquivo
@@ -183,7 +260,7 @@ class Peer:
             for peer_id, blocos in self.estoques:
                 if  peer_id in self.peers:
                     for bloco in blocos:
-                        if bloco not in self.blocos and bloco not in blocos_pendentes: # Verifica se já possui o bloco ou se já solicitou o bloco
+                        if bloco not in self.indices and bloco not in blocos_pendentes: # Verifica se já possui o bloco ou se já solicitou o bloco
                             blocos_faltando.append((peer_id, bloco))
 
         if blocos_faltando:
@@ -202,7 +279,7 @@ class Peer:
             "bloco": bloco
         }
         conexao = self.peers[peer_alvo]["conexao"]
-        conexao.send(json.dumps(mensagem).encode())
+        conexao.send((json.dumps(mensagem) + '\n').encode())
         self.log(f"Peer {self.id} solicitou o bloco {bloco} ao peer {peer_alvo} ")
         
     def enviar_bloco(self, peer_alvo, indice, bloco):
@@ -214,6 +291,6 @@ class Peer:
         }
         
         conexao = self.peers[peer_alvo]["conexao"]
-        conexao.send(json.dumps(mensagem).encode())
-        self.log(f"Bloco {indice} enviado para o peer {peer_alvo}")
+        conexao.send((json.dumps(mensagem) + '\n').encode())
+        self.log(f"Bloco {indice} enviado para o peer {peer_alvo} ({self.short(bloco)})")
         

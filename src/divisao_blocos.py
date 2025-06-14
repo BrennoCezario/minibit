@@ -22,7 +22,7 @@ CAMINHO_ARQUIVO = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", 
 class DivisaoBlocos:
     def __init__(self, arquivo):
         self.arquivo = os.path.abspath(os.path.join(CAMINHO_ARQUIVO, arquivo))
-        self.tamanho_bloco = 2 * 1024 # Tamanho em bytes, 2 KB
+        self.tamanho_bloco = 32 * 1024 # Tamanho em bytes, 32 KB
         self.algoritmo_hash = 'sha256'
         self.data_blocos = []
         self.hash_blocos = []

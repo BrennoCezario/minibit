@@ -44,5 +44,7 @@ if __name__ == "__main__":
     tracker = Tracker()
 
     tracker.dividir_arquivo(arquivo)
+
+    threading.Thread(target=tracker.processar_mensagens).start()
     
     tracker.iniciar_servidor(TRACKER_PORTA)
