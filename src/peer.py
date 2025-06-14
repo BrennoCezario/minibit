@@ -125,7 +125,7 @@ class Peer:
                     self.correio.clear()
 
             if mensagens_para_processar:
-                self.log(f"Verificando suas mensagens: {[str(mensagem) + '...' for conn, mensagem in mensagens_para_processar]}")
+                self.log(f"Verificando suas mensagens: {[str(mensagem[:28]) + '...' for conn, mensagem in mensagens_para_processar]}")
                 
                 curtas_msgs = []
 
@@ -167,9 +167,10 @@ class Peer:
                                         for pid, info in self.peers.items() if pid != peer_id
                                     ]
                                     conexao.send((json.dumps({"tipo": "LISTA_PEERS", "peers": lista_peers}) + '\n').encode())
+                                
                                 # self.fornecer_blocos(conexao, peer_id) if self.id == 0 else None
                                 
-                                # self.conectar_servidor(peer_porta) if peer_porta not in self.conectados else None
+                                self.conectar_servidor(peer_porta) if peer_porta not in self.conectados else None
                                 
                             case "ESTOQUE":
                                 peer_id = mensagem.get("id")

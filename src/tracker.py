@@ -16,12 +16,18 @@ class Tracker(Peer):
         
     def fornecer_blocos(self, conexao, peer_id):
         blocos_por_peer = (len(self.blocos) // 4) + 1
-        blocos_fornecidos = random.sample(self.blocos, blocos_por_peer)
+        blocos_fornecidos = random.sample(self.indices, blocos_por_peer)
         
-        for indice, bloco in blocos_fornecidos:
-            self.enviar_bloco(peer_id, indice, bloco)
+        for indice in blocos_fornecidos:
+            mensagem = {
+            "tipo": "PEDIDO",
+            "id": peer_id,
+            "bloco": indice
+            }
+            self.correio.append((conexao, json.dumps(mensagem)))
+                
             
-        print(f"{len(blocos_fornecidos)} Blocos enviados para o peer ")
+        print(f"{len(blocos_fornecidos)} Blocos enviados para o peer {peer_id} ")
     
     def dividir_arquivo(self, arquivo):
         dividir_arquivo = DivisaoBlocos(arquivo)
@@ -39,7 +45,7 @@ class Tracker(Peer):
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")
     
-    arquivo = "trabalho_final.pdf"
+    arquivo = "video.mp4"
     
     tracker = Tracker()
 

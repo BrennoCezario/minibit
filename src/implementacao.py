@@ -36,7 +36,7 @@ def completar_arquivo(peer):
     # processador_mensagens = threading.Thread(target=peer.processar_mensagens).start()
 
     blocos_totais = obter_blocos_totais()
-
+    print("=== INICIANDO DOWNLOAD DO ARQUIVO ===")
     while len(set(indice for indice, _ in peer.blocos)) < blocos_totais:
         try:
             id_alvo, bloco_desejado = peer.receber_estoques() # Verifica os estoques e tenta solicitar um bloco e o id do peer que possui o bloco
@@ -47,6 +47,7 @@ def completar_arquivo(peer):
         
     peer.arquivo_completo = True # Mostra que completou o arquivo
     print(f"[Peer {peer.id}] Obteve todos os blocos")
+    print("=== DOWNLOAD CONCLUÍDO ===")
     
     blocos_dicio = {}
     for indice, bloco in peer.blocos:
@@ -59,7 +60,7 @@ def completar_arquivo(peer):
     f.close()
     construtor = ConstruirArquivo(blocos)
 
-    print("Peer", peer.id, "tem blocos:", sorted(blocos_dicio.keys()))
+    print("\nPeer", peer.id, "tem blocos:", sorted(blocos_dicio.keys()),"\n")
     for i in range(1, blocos_totais + 1):
         if i not in blocos_dicio:
             print(f"Peer {peer.id} está faltando o bloco {i}")
