@@ -5,12 +5,11 @@ import json
 import random
 import base64
 from .peer import Peer
+from .construcao_arquivo import ConstruirArquivo
 
 TRACKER_PORTA = 8000
 
 PORTA_BASE = 9000
-
-blocos_totais = 0
 
 def obter_blocos_iniciais(peer, tracker):
     
@@ -22,8 +21,7 @@ def obter_blocos_iniciais(peer, tracker):
     for indice in range(len(blocos)):
             blocos[indice] = (indice+1, blocos[indice])
             peer.indices.append(indice+1)
-    
-    global blocos_totais
+
     blocos_totais = len(blocos)
     
     peer.blocos = random.sample(blocos, (len(blocos) // 4) + 1)
@@ -32,24 +30,31 @@ def obter_blocos_iniciais(peer, tracker):
                  
 def completar_arquivo(peer):
     peer.receptor_ativo = True
-    processador_mensagens = threading.Thread(target=peer.processar_mensagens()).start()
-    
-    global blocos_totais
-    
+    processador_mensagens = threading.Thread(target=peer.processar_mensagens).start()
+    blocos_totais = 72
     while len(peer.blocos) < blocos_totais:
-        peer.enviar_estoque()
-        
         try:
             id_alvo, bloco_desejado = peer.receber_estoques() # Verifica os estoques e tenta solicitar um bloco e o id do peer que possui o bloco
         except TypeError:
             continue
         
-        time.sleep(0.1)
-        
-        peer.solicitar_bloco(peer.peers[id_alvo], bloco_desejado)
+        peer.solicitar_bloco(id_alvo, bloco_desejado)
+        time.sleep(1)
         
     peer.arquivo_completo = True # Mostra que completou o arquivo
     print(f"[Peer {peer.id}] Obteve todos os blocos")
+    
+
+    blocos = []
+    for bloco in peer.blocos:
+        blocos.append(bloco[1])
+    
+    blocos_arquivo = "peer_1.json"
+    f = open(blocos_arquivo, 'w')
+    json.dump(blocos, f)
+    f.close()
+    construtor = ConstruirArquivo(blocos)
+    construtor.rodar(peer.id)
     
     processador_mensagens.join()
     return
@@ -65,6 +70,8 @@ if __name__ == "__main__":
     thread_servidor = threading.Thread(target=peer.iniciar_servidor, args=(PORTA_BASE+peer.id, )).start()
     
     tracker = peer.conectar_servidor(TRACKER_PORTA)
+    
+    peer.tracker_conexao = tracker
     
     obter_blocos_iniciais(peer, tracker)
 

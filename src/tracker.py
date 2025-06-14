@@ -14,13 +14,14 @@ class Tracker(Peer):
     def __init__(self):
         super().__init__(id=0)
         
-    def fornecer_blocos(self, conexao):
+    def fornecer_blocos(self, conexao, peer_id):
         blocos_por_peer = (len(self.blocos) // 4) + 1
         blocos_fornecidos = random.sample(self.blocos, blocos_por_peer)
         
-        ...
+        for indice, bloco in blocos_fornecidos:
+            self.enviar_bloco(peer_id, indice, bloco)
             
-        print(f"{len(blocos_fornecidos)} Blocos enviados para o peer")
+        print(f"{len(blocos_fornecidos)} Blocos enviados para o peer ")
     
     def dividir_arquivo(self, arquivo):
         dividir_arquivo = DivisaoBlocos(arquivo)
