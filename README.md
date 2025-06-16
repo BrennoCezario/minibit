@@ -134,9 +134,20 @@ As mensagens trocadas entre os peers seguem o padrão JSON e possuem um atributo
 
 ## Dificuldades Enfrentadas
 
+- Implementação do algoritmo Tit-for-Tat com Sockets:
+Houve grande desafio em adaptar a lógica do tit-for-tat à arquitetura do projeto, que dependia de comunicação entre peers via sockets. A complexidade em manter o controle de estado dos peers e realizar desbloqueios periódicos de forma sincronizada dificultou a finalização completa dessa funcionalidade. Apesar disso, conseguimos implementar uma lógica funcional que preenche o top4 de peers com base na disponibilidade dos blocos mais raros, conforme o esperado na estratégia de rarest-first.
+
+
+- Adaptação da estratégia Rarest-First:
+A lógica de rarest-first inicialmente foi desenvolvida de forma isolada, focada na validação de uma estrutura de dados diferente da representação exata no projeto o que dificutou sua integração. Para integrá-la ao sistema de compartilhamento real entre peers, foi necessário reestruturar a solução com base na estrutura de dados utilizada no projeto, o que só foi possível com a colaboração ativa de colegas da equipe, que ajudaram a identificar os pontos de integração corretos.
+  
+
+- Compreensão de códigos de outros integrantes:
+No início do desenvolvimento, houve dificuldade para entender partes do código desenvolvidas por outros membros do grupo, devido a diferentes estilos e abordagens de implementação. No entanto, as reuniões de alinhamento e as conversas frequentes via chat permitiram esclarecer dúvidas e melhorar o entendimento coletivo da base de código, facilitando a colaboração e o progresso do projeto.
 ## Reflexão Individual
 
 **• Artur:**
+Durante o desenvolvimento do trabalho de Sistemas Distribuídos, pude refletir sobre minha participação e aprendizado ao longo do projeto. Embora minha contribuição tenha sido proporcionalmente menor em comparação com a de outros integrantes, as reuniões de alinhamento foram extremamente valiosas para o entendimento coletivo e evidenciaram diferentes níveis de familiaridade com as tecnologias adotadas no projeto entre os membros da equipe. Em diversos momentos, o apoio dos integrantes da equipe foi essencial para destravar pontos em que dificuldades foram encontradas, o que reforçou a importância da colaboração em projetos. Apesar de o sistema não ter sido finalizado em sua totalidade, considero extremamente enriquecedor o processo de implementação de uma solução de cenário real, ainda que parcial, pois me permitiu aprofundar o entendimento sobre conceitos teóricos e práticos do contexto abordado.
 
 **• Brenno:** 
 A tarefa de implementar um sistema que simula o BitTorrent foi muito interessante e ensinou bastante sobre o funcionamento de uma rede P2P. Também foi ótimo poder aperfeiçoar e entender melhor as comunicações por socket, que foram muito utilizadas em nosso sistema. O algoritmo foi desafiador, mas foi gratificante conseguir superar as diversas dificuldades da implementação. Para o aprendizado foi ótimo. A maior dificuldade foi conseguir alinhar cada etapa com a equipe, pois houve desafios relacionados à forma como o trabalho foi dividido entre os participantes. Cada integrante tem seu próprio estilo de codificação e organização, o que acabou tornando o entendimento do código dos colegas um pouco mais complexo. Além disso, foi necessário aguardar atualizações ou correções de partes específicas para que outras pudessem avançar, o que impactou no ritmo de desenvolvimento. Apesar disso, a experiência foi valiosa para compreender melhor a importância da comunicação e da coordenação em projetos colaborativos.
