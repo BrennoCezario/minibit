@@ -324,4 +324,43 @@ class Peer:
         conexao.send((json.dumps(mensagem) + '\n').encode())
         self.mensagens_enviadas += 1
         self.log(f"Bloco {indice} enviado para o peer {peer_alvo} ({self.short(bloco)})")
-        
+
+    def set_top_4(self):
+
+        blocos_faltando = []  # Blocos que o peer ainda precisa
+        bloco_peers = {}  # bloco → lista de peers que possuem esse bloco
+
+        with self.lock:
+            blocos_pendentes = [p[1] for p in self.pedidos]
+            for peer_id, blocos in self.estoques:
+                if peer_id in self.peers:
+                    for bloco in blocos:
+                        if bloco not in self.indices and bloco not in blocos_pendentes:
+                            blocos_faltando.append(bloco)
+                            bloco_peers.setdefault(bloco, []).append(peer_id)
+
+        if not blocos_faltando:
+            self.arquivo_completo = True
+            return None
+
+        # Contar frequência de cada bloco nos estoques recebidos
+        frequencia = Counter(blocos_faltando)
+        minima_frequencia = min(frequencia.values())
+
+        # Selecionar os blocos mais raros
+        raros_blocos = [bloco for bloco, count in frequencia.items() if count == minima_frequencia]
+
+        # Construir peer → lista de blocos raros que ele possui
+        peer_raros = {}
+        for bloco in raros_blocos:
+            for peer in bloco_peers[bloco]:
+                peer_raros.setdefault(peer, set()).add(bloco)
+
+        # Ordenar os peers que têm mais blocos raros
+        peers_ordenados = sorted(
+            peer_raros.items(),
+            key=lambda item: len(item[1]),
+            reverse=True
+        )
+
+        self.top4 = peers_ordenados[:4]  # Pega os 4 primeiros peers com mais blocos raros
