@@ -41,40 +41,52 @@ As mensagens trocadas entre os peers seguem o padrão JSON e possuem um atributo
 
 ## Estratégia para rarest first e tit-for-tat
 
-    Estratégia para rarest first
 
-        Está implementado no código o rarest-first.
-        O rarest-first é um algoritmo que prioriza o download dos blocos mais raros primeiro, para assim tornar esse bloco mais disponível na rede entre os peers e então o download ser mais rápido e evitando que blocos se tornem indisponíveis, já que se somente um peer tem um determinado bloco e ele sai, teríamos indisponibilidade de blocos. No nosso código o tracker funciona como seed, então ele possui todos os blocos e é possível os outros peers baixar a partir dele, então esse problema de blocos indisponíveis não iria acontecer.
+Está implementado no código o rarest-first.
+O rarest-first é um algoritmo que prioriza o download dos blocos mais raros primeiro, para assim tornar esse bloco mais disponível na rede entre os peers e então o download ser mais rápido e evitando que blocos se tornem indisponíveis, já que se somente um peer tem um determinado bloco e ele sai, teríamos indisponibilidade de blocos. No nosso código o tracker funciona como seed, então ele possui todos os blocos e é possível os outros peers baixar a partir dele, então esse problema de blocos indisponíveis não iria acontecer.
 
-        No código, a funcionalidade está localizada em peer.py e funciona da seguinte forma:
+No código, a funcionalidade está localizada em peer.py e funciona da seguinte forma:
 
-        cada peer recebe mensagens de estoque dos outros peers, informando quais blocos este peer que enviou a mensagem tem.
+1. Cada peer recebe mensagens de estoque dos outros peers, informando quais blocos este peer que enviou a mensagem tem.
+
+```py
         case "ESTOQUE":
-                                    peer_id = mensagem.get("id")
-                                    peer_estoque = mensagem.get("estoque")
-                                    
-                                    if not (peer_id, peer_estoque) in self.estoques:
-                                        with self.lock:
-                                            self.estoques.append((peer_id, list(peer_estoque)))
-                                    else:
-                                        for estoque in self.estoques:
-                                            if estoque[0] == peer_id:
-                                                with self.lock:
-                                                    estoque = (peer_id, peer_estoque)
-                                                    break
-                                            
-                                    self.log(f"Estoque do peer {peer_id} recebido") 
-        essa informação é guardada em self.estoques como uma lista de tuplas, em que temos a informação do id do peer e os blocos que este peer possui.
-        Quando um peer quer pedir um bloco, ele vai chamar a função receber_estoques(). 
-        - Esta função vai construir uma lista com os blocos faltantes do peer que chamou, e também uma lista de blocos que estão disponíveis em outros peers.
-        - A função também serve para verificar se o arquivo está completo. Se blocos_faltando for vazio, então quer dizer que tem todos os blocos, e então vai colocar como True a flag arquivo_completo.
-        - blocos_faltando é uma lista com a numeração dos blocos que faltam para o peer e que estão disponíveis em outros peers. Por exemplo, ele podia vir assim: [2, 3, 5, 5, 6, 6, 3, 3] em que temos 2 ocorrências do bloco 5, isso quer dizer que tem o peer não possui o bloco 5, e que outros 2 peers tem esse bloco. nesse exemplo que dei, os mais raros seria o bloco de índice 2, que é aparece somente uma vez. Isso significa que somente um peer na rede possui este bloco. Isto é importante para a estratégia de rarest-first a seguir.
-        - Vem então o rarest-first. Utilizamos o Counter para contar a frequência de cada bloco na lista blocos_faltante, com minima_frequencia verificamos os blocos de menor frequência, ou seja, os mais raros.
-        - Em seguida, utilizamos um for para contar e guardar os blocos mais raros, guardamos em raros_blocos
-        - caso tenhamos mais de um bloco considerado raros, isso seria no caso em que temos a mesma frequencia, usamos random para escolher um bloco aleatório e guardamos em r_bloco_escolhido.
-        - Depois, verificamos os peers que possuem esse bloco, caso tenha mais de um peer com esse bloco raro que queremos, usamos random para escolher.
-        - Por fim, retornamos -> return (r_peer_id_escolhido, r_bloco_escolhido) o id do peer e o bloco que queremos baixar, este sendo o mais raro.
-        - Para verificação da funcionalidade, usamos log para mostrar a frequência dos blocos em ordem decrescente, do menos raro para o mais raro, e também mostramos os blocos que são realmente considerados os mais raros, ou seja, os de menor frequência.
+            peer_id = mensagem.get("id")
+            peer_estoque = mensagem.get("estoque")
+            
+            if not (peer_id, peer_estoque) in self.estoques:
+                with self.lock:
+                    self.estoques.append((peer_id, list(peer_estoque)))
+            else:
+                for estoque in self.estoques:
+                    if estoque[0] == peer_id:
+                        with self.lock:
+                            estoque = (peer_id, peer_estoque)
+                            break
+                    
+            self.log(f"Estoque do peer {peer_id} recebido")
+```
+2. Essa informação é guardada em self.estoques como uma lista de tuplas, em que temos a informação do id do peer e os blocos que este peer possui.
+
+3. Quando um peer quer pedir um bloco, ele vai chamar a função receber_estoques(). 
+
+4. Esta função vai construir uma lista com os blocos faltantes do peer que chamou, e também uma lista de blocos que estão disponíveis em outros peers.
+
+5. A função também serve para verificar se o arquivo está completo. Se blocos_faltando for vazio, então quer dizer que tem todos os blocos, e então vai colocar como True a flag arquivo_completo.
+
+6. blocos_faltando é uma lista com a numeração dos blocos que faltam para o peer e que estão disponíveis em outros peers. Por exemplo, ele podia vir assim: [2, 3, 5, 5, 6, 6, 3, 3] em que temos 2 ocorrências do bloco 5, isso quer dizer que tem o peer não possui o bloco 5, e que outros 2 peers tem esse bloco. nesse exemplo que dei, os mais raros seria o bloco de índice 2, que é aparece somente uma vez. Isso significa que somente um peer na rede possui este bloco. Isto é importante para a estratégia de rarest-first a seguir.
+
+7. Vem então o rarest-first. Utilizamos o Counter para contar a frequência de cada bloco na lista blocos_faltante, com minima_frequencia verificamos os blocos de menor frequência, ou seja, os mais raros.
+
+8. Em seguida, utilizamos um for para contar e guardar os blocos mais raros, guardamos em raros_blocos
+
+9. Caso tenhamos mais de um bloco considerado raros, isso seria no caso em que temos a mesma frequencia, usamos random para escolher um bloco aleatório e guardamos em r_bloco_escolhido.
+
+10. Depois, verificamos os peers que possuem esse bloco, caso tenha mais de um peer com esse bloco raro que queremos, usamos random para escolher.
+
+11. Por fim, retornamos -> return (r_peer_id_escolhido, r_bloco_escolhido) o id do peer e o bloco que queremos baixar, este sendo o mais raro.
+
+12. Para verificação da funcionalidade, usamos log para mostrar a frequência dos blocos em ordem decrescente, do menos raro para o mais raro, e também mostramos os blocos que são realmente considerados os mais raros, ou seja, os de menor frequência.
 
 ## Resultados de testes
 

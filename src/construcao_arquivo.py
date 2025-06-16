@@ -23,7 +23,12 @@ class ConstruirArquivo:
         
         nome_esboco = self.metadata["nome_arquivo"]
         nome_arquivo, extensao_arquivo = os.path.splitext(nome_esboco)
-        output = f"{nome_arquivo}_peer{peer_id}{extensao_arquivo}"
+        
+        diretorio = os.path.join("armazenamento", f"peer_{peer_id}")
+        os.makedirs(diretorio, exist_ok=True)
+        
+        output =  os.path.join(diretorio, f"{nome_arquivo}_peer{peer_id}{extensao_arquivo}")
+
         # abre o arquivo de saída recém criado como wb (write binary), decodifica base64 em bytes e escreve os bytes, montando o arquivo
         f = open(output, 'wb')
         try:

@@ -3,7 +3,7 @@ import threading
 import time
 import json
 import random
-import base64
+import os
 from .peer import Peer
 from .construcao_arquivo import ConstruirArquivo
 
@@ -63,6 +63,11 @@ def completar_arquivo(peer):
             print(f"Peer {peer.id} está faltando o bloco {i}")
 
     construtor.rodar(peer.id)
+
+    # Remove o arquivo JSON após rodar
+    if os.path.exists(blocos_arquivo):
+        os.remove(blocos_arquivo)
+        print(f"[Peer {peer.id}] Arquivo temporário '{blocos_arquivo}' removido.")
 
     fim = time.time()
     print(f"[Peer {peer.id}] realizou o download em {fim-inicio:.2f} segundos")
