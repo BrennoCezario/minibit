@@ -4,6 +4,13 @@ Implementação de um Sistema de Compartilhamento Cooperativo de Arquivos com Es
 
 ## Diagrama da arquitetura
 
+![alt text](img/diagrama_2.png)
+![alt text](img/diagrama_1.png)
+![alt text](img/diagrama_3.png)
+![alt text](img/diagrama_5.png)
+![alt text](img/diagrama_4.png)
+
+
 ## Protocolo de comunicação
 
 A comunicação entre peers e o tracker no sistema ocorre através de sockets.
