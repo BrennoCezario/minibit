@@ -7,7 +7,7 @@ import base64
 from .peer import Peer
 from .construcao_arquivo import ConstruirArquivo
 
-TRACKER_PORTA = 8000
+TRACKER_PORTA = 8001
 
 PORTA_BASE = 9000
 
@@ -17,13 +17,11 @@ def obter_blocos_iniciais(peer, tracker):
             blocos = json.load(f)
     for indice in range(len(blocos)):
             blocos[indice] = (indice+1, blocos[indice])
-
-    blocos_totais = len(blocos)
     
-    peer.blocos = random.sample(blocos, (len(blocos) // 3) + 1)
+    peer.blocos = random.sample(blocos, (len(blocos) // 10) + 1)
     peer.indices = [indice for indice, _ in peer.blocos] # os indices do peer sao somente os indices dos blocos que possui
     
-    print(f"\n{len(peer.blocos)} Blocos: {[bloco[1][:5] + '...' for bloco in peer.blocos]}\n")
+    print(f"\nPeer {peer.id} inicio com {len(peer.blocos)} blocos: {[bloco[1][:5] + '...' for bloco in peer.blocos]}\n")
 
 def obter_blocos_totais():
     f = open("metadata.json", 'r', encoding="utf-8")
@@ -36,7 +34,8 @@ def completar_arquivo(peer):
     # processador_mensagens = threading.Thread(target=peer.processar_mensagens).start()
 
     blocos_totais = obter_blocos_totais()
-    print("=== INICIANDO DOWNLOAD DO ARQUIVO ===")
+    
+    inicio = time.time()
     while len(set(indice for indice, _ in peer.blocos)) < blocos_totais:
         try:
             id_alvo, bloco_desejado = peer.receber_estoques() # Verifica os estoques e tenta solicitar um bloco e o id do peer que possui o bloco
@@ -46,8 +45,7 @@ def completar_arquivo(peer):
         time.sleep(1)
         
     peer.arquivo_completo = True # Mostra que completou o arquivo
-    print(f"[Peer {peer.id}] Obteve todos os blocos")
-    print("=== DOWNLOAD CONCLUÍDO ===")
+    print(f"\n[Peer {peer.id}] Obteve todos os blocos")
     
     blocos_dicio = {}
     for indice, bloco in peer.blocos:
@@ -60,13 +58,16 @@ def completar_arquivo(peer):
     f.close()
     construtor = ConstruirArquivo(blocos)
 
-    print("\nPeer", peer.id, "tem blocos:", sorted(blocos_dicio.keys()),"\n")
+    print(f"[Peer {peer.id}] tem blocos: {sorted(blocos_dicio.keys())}")
     for i in range(1, blocos_totais + 1):
         if i not in blocos_dicio:
             print(f"Peer {peer.id} está faltando o bloco {i}")
 
     construtor.rodar(peer.id)
-    
+
+    fim = time.time()
+    print(f"[Peer {peer.id}] realizou o download em {fim-inicio:.2f} segundos")
+    print(f"[Peer {peer.id}] realizou o envio de {peer.mensagens_enviadas} mensagens\n")
     # processador_mensagens.join()
     return
 

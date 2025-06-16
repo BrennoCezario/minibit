@@ -33,7 +33,7 @@ class ConstruirArquivo:
                 f.write(bloco)
         finally:
             f.close()
-        print("Arquivo reconstruido como:", output)
+        print(f"[Peer {peer_id}] Arquivo reconstruido como:", output)
         return output
     
     # com verifica_construcao, verificamos o hash de cada bloco reconstruido com o hash que criamos quando estávamos dividindo o arquivo original em blocos
@@ -57,7 +57,7 @@ class ConstruirArquivo:
         Esta é a nova função principal. Ela reordena os blocos de dados
         baseado na sequência de hashes do arquivo de metadados.
         """
-        print("Mapeando hashes dos blocos recebidos...")
+        # print("Mapeando hashes dos blocos recebidos...")
         algoritmo_hash = self.metadata.get("algoritmo_hash", "sha256")
         
         # 1. Cria um mapa de hash -> dado_do_bloco
@@ -68,7 +68,7 @@ class ConstruirArquivo:
             mapa_hash_para_bloco[hash_calculado] = bloco_b64
 
         # 2. Monta a lista ordenada usando o metadata como guia
-        print("Ordenando blocos de acordo com os hashes do metadata...")
+        # print("Ordenando blocos de acordo com os hashes do metadata...")
         blocos_ordenados = []
         hashes_originais = self.metadata["hash_blocos"]
         
@@ -86,15 +86,15 @@ class ConstruirArquivo:
             print("FALHA: O número de blocos encontrados não corresponde ao metadata.")
             return None
             
-        print("Blocos ordenados com sucesso!")
+        # print("Blocos ordenados com sucesso!")
         return blocos_ordenados
 
     def rodar(self, peer_id):
         self.carregar_dados()
         self.construir_arquivo(peer_id)
         # validação dos blocos, hash_blocos são os hashes originais, e 'blocos' contem os hashes dos 
-        if self.verifica_construcao():
-            print("Sucesso, verificação hash bem sucedida.")
-        else:
-            print("Falha, alguns blocos falharam a verificação hash.")
+        # if self.verifica_construcao():
+        #     print("Sucesso, verificação hash bem sucedida.")
+        # else:
+        #     print("Falha, alguns blocos falharam a verificação hash.")
 
