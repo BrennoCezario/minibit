@@ -45,7 +45,7 @@ class Tracker(Peer):
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")
     
-    arquivo = "trabalho_final.pdf"
+    arquivo = "video.mp4"
     
     tracker = Tracker()
 

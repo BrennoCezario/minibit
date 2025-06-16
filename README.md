@@ -41,9 +41,9 @@ As mensagens trocadas entre os peers seguem o padrão JSON e possuem um atributo
 
 ![alt text](img/image-15.png)
 
-**• Resultado com img/imagem (PNG):**
+**• Resultado com imagem (PNG):**
 
-![alt text](img/img/image-22.png)
+![alt text](img/image-22.png)
 
 ![alt text](img/image-23.png)
 
