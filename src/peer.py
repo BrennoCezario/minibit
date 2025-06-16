@@ -9,7 +9,7 @@ from collections import Counter
 
 IP = '127.0.0.1'
 
-TRACKER_PORTA = 8001
+TRACKER_PORTA = 8000
 
 PORTA_BASE = 9000
 
@@ -25,7 +25,7 @@ class Peer:
         self.pedidos = [] # Pedidos que o peer já fez e ainda não foram recebidos
         self.correio = [] # Fila de mensagens recebidas de outros peers
         self.top4 = [] # Peers com quem há troca de blocos
-        self.estoques = [] # Estoque de blocos de todos os peers da rede
+        self.estoques = {} # Estoque de blocos de todos os peers da rede
         self.lock = threading.Lock()
         self.tracker_conexao = 0
         self.peers = {} # Lista de todos os peers da rede
@@ -182,16 +182,10 @@ class Peer:
                             case "ESTOQUE":
                                 peer_id = mensagem.get("id")
                                 peer_estoque = mensagem.get("estoque")
-                                
-                                if not (peer_id, peer_estoque) in self.estoques:
-                                    with self.lock:
-                                        self.estoques.append((peer_id, list(peer_estoque)))
-                                else:
-                                    for estoque in self.estoques:
-                                        if estoque[0] == peer_id:
-                                            with self.lock:
-                                                estoque = (peer_id, peer_estoque)
-                                                break
+
+                                with self.lock:
+                                    self.estoques[peer_id] = list(peer_estoque)
+
                                         
                                 self.log(f"Estoque do peer {peer_id} recebido") 
                                 
@@ -243,7 +237,9 @@ class Peer:
     def enviar_estoque(self):
         while self.fornecedor_ativo:
             time.sleep(3)
-            for peer_id, dados in self.peers.items():
+            with self.lock:
+                peers = list(self.peers.items())
+            for peer_id, dados in peers:
                 if peer_id == 0: # id = 0 é o tracker, então pulamos
                     continue
                 conexao = dados["conexao"]
@@ -263,7 +259,7 @@ class Peer:
         bloco_peers = {}
         with self.lock:
             blocos_pendentes = [p[1] for p in self.pedidos]
-            for peer_id, blocos in self.estoques:
+            for peer_id, blocos in self.estoques.items():
                 if peer_id in self.peers:
                     for bloco in blocos:
                         if bloco not in self.indices and bloco not in blocos_pendentes: # Verifica se já possui o bloco ou se já solicitou o bloco
@@ -277,7 +273,6 @@ class Peer:
         if not blocos_faltando:
             self.arquivo_completo = True
             return None
-        self.log(blocos_faltando)
         frequencia = Counter(blocos_faltando)
         minima_frequencia = min(frequencia.values())
         # aqui criamos uma lista com os blocos com a menor frequencia, os mais raros

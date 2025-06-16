@@ -8,7 +8,7 @@ python -m src.tracker &
 sleep 2
 
 # Iniciar 15 peers
-for i in $(seq 1 5)
+for i in $(seq 1 10)
 do
     echo "Iniciando peer $i..."
     python -m src.implementacao --id=$i & 

@@ -8,7 +8,7 @@ import base64
 from .divisao_blocos import DivisaoBlocos
 from .peer import Peer
 
-TRACKER_PORTA = 8001
+TRACKER_PORTA = 8000
 
 class Tracker(Peer):
     def __init__(self):

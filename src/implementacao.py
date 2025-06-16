@@ -7,7 +7,7 @@ import os
 from .peer import Peer
 from .construcao_arquivo import ConstruirArquivo
 
-TRACKER_PORTA = 8001
+TRACKER_PORTA = 8000
 
 PORTA_BASE = 9000
 
