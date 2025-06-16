@@ -230,6 +230,11 @@ class Peer:
                                     self.indices.append(indice_bloco)
                                 with self.lock:
                                     self.pedidos = [p for p in self.pedidos if p[1] != indice_bloco]
+                            case "DESLIGAMENTO":
+                                peer_id = mensagem.get("id")
+                                self.log(f"Peer {peer_id} comunicou seu desligamento.")
+                                print(f"Peer {peer_id} desligou após completar o arquivo.")
+
                                 
                     except Exception as e:
                         print(f"Erro ao processar mensagem: {e}")
@@ -359,3 +364,22 @@ class Peer:
         )
 
         self.top4 = peers_ordenados[:4]  # Pega os 4 primeiros peers com mais blocos raros
+
+    def encerrar_peer(self):
+        self.receptor_ativo = False
+        self.fornecedor_ativo = False
+
+        # Envia mensagem de desligamento ao tracker
+        if self.tracker_conexao:
+            mensagem = {
+                "tipo": "DESLIGAMENTO",
+                "id": self.id
+            }
+            try:
+                self.tracker_conexao.send((json.dumps(mensagem) + '\n').encode())
+                self.mensagens_enviadas += 1
+                self.log(f"Peer {self.id} enviou mensagem de desligamento ao tracker.")
+            except:
+                self.log(f"Peer {self.id} falhou ao comunicar desligamento ao tracker.")
+
+        print(f"Peer {self.id} desligado com segurança após completar o arquivo.")

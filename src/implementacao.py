@@ -63,6 +63,7 @@ def completar_arquivo(peer):
             print(f"Peer {peer.id} está faltando o bloco {i}")
 
     construtor.rodar(peer.id)
+    
 
     # Remove o arquivo JSON após rodar
     if os.path.exists(blocos_arquivo):
@@ -72,6 +73,11 @@ def completar_arquivo(peer):
     fim = time.time()
     print(f"[Peer {peer.id}] realizou o download em {fim-inicio:.2f} segundos")
     print(f"[Peer {peer.id}] realizou o envio de {peer.mensagens_enviadas} mensagens\n")
+    
+    peer.receptor_ativo = False
+    peer.fornecedor_ativo = False
+    print(f"[Peer {peer.id}] encerrando operações com segurança.")
+    peer.encerrar_peer()
     
     return
 
