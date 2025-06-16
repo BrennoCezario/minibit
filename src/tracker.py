@@ -8,7 +8,7 @@ import base64
 from .divisao_blocos import DivisaoBlocos
 from .peer import Peer
 
-TRACKER_PORTA = 8000
+TRACKER_PORTA = 8001
 
 class Tracker(Peer):
     def __init__(self):
@@ -45,7 +45,7 @@ class Tracker(Peer):
 if __name__ == "__main__":
     os.system("cls" if os.name == "nt" else "clear")
     
-    arquivo = "video.mp4"
+    arquivo = "trabalho_final.pdf"
     
     tracker = Tracker()
 
