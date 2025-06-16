@@ -31,7 +31,6 @@ def obter_blocos_totais():
 
 def completar_arquivo(peer):
     peer.receptor_ativo = True
-    # processador_mensagens = threading.Thread(target=peer.processar_mensagens).start()
 
     blocos_totais = obter_blocos_totais()
     
@@ -68,7 +67,7 @@ def completar_arquivo(peer):
     fim = time.time()
     print(f"[Peer {peer.id}] realizou o download em {fim-inicio:.2f} segundos")
     print(f"[Peer {peer.id}] realizou o envio de {peer.mensagens_enviadas} mensagens\n")
-    # processador_mensagens.join()
+    
     return
 
 if __name__ == "__main__":
